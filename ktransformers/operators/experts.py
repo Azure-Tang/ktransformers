@@ -131,7 +131,11 @@ class KExpertsCPU(KExpertsBase):
         out_device: str = "cuda", # this device mean which device the output should on. TODO: support cpu.
         **kwargs
     ):
+        gguf_loader:GGUFLoader = None # @@@@@@
         super().__init__(key, gguf_loader, config, orig_module, device, **kwargs)
+        if KExpertsCPU.gguf_loader is None:
+                KExpertsCPU.gguf_loader = GGUFLoader("/mnt/data/model/DeepseekV3-q4km-gguf")
+        self.gguf_loader = KExpertsCPU.gguf_loader
         assert device.lower() == "cpu", "KExpertsCPU can only be loaded on CPU"
         self.n_routed_experts = n_routed_experts
         self.out_device = out_device
