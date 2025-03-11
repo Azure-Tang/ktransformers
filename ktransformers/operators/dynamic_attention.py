@@ -17,7 +17,11 @@ import logging
 logger = logging.getLogger("dynamic_attention")
 sys.path.append(os.path.dirname(__file__) + "/../ktransformers_ext/cpu_backend")
 from ktransformers.operators.cpuinfer import CPUInfer, CPUInferKVCache
-from flash_attn import flash_attn_func, flash_attn_with_kvcache
+# judge if flash_attn is available
+try:
+    from flash_attn import flash_attn_func, flash_attn_with_kvcache
+except:
+    pass
 
 
 import math

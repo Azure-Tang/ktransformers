@@ -17,6 +17,14 @@
 #include <queue>
 #include <thread>
 #include <vector>
+#ifdef KTRANSFORMERS_USE_CUDA
+#include "vendors/cuda.h"
+#elif KTRANSFORMERS_USE_MUSA
+#include "vendors/musa.h"
+#elif KTRANSFORMERS_USE_ROCM
+#define __HIP_PLATFORM_AMD__
+#include "vendors/hip.h"
+#endif
 
 #include "backend.h"
 #include "task_queue.h"
