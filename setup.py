@@ -293,6 +293,7 @@ class CMakeBuild(BuildExtension):
 
 
 setup(
+    name=VersionInfo.PACKAGE_NAME,
     version=VersionInfo().get_package_version(),
     cmdclass={"bdist_wheel":BuildWheelsCommand ,"build_ext": CMakeBuild},
     ext_modules=[
