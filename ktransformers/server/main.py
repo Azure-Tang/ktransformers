@@ -19,6 +19,7 @@ from ktransformers.server.utils.sql_utils import Base, SQLUtil
 from ktransformers.server.config.log import logger
 import subprocess
 import tempfile
+sys.path.insert(0, project_dir)
 
 def mount_app_routes(mount_app: FastAPI):
     sql_util = SQLUtil()

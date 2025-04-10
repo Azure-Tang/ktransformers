@@ -55,7 +55,7 @@ class KMoEGateBase(ABC):
         down_type = None
 
         for key in keys:
-            key = ".".join(key.split(".")[:-1])
+            # key = ".".join(key.split(".")[:-1])
             if self.gguf_loader.safetensor_loader is not None:
                 targets = [".ffn_gate_inp.weight", ".exp_probs_b.bias"]
                 weight = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_gate_inp.weight") 
@@ -63,13 +63,15 @@ class KMoEGateBase(ABC):
                 weight_type = weight.dtype
                 e_score_correction_bias_type = e_score_correction_bias.dtype
                 res = {"weight": weight, "e_score_correction_bias": e_score_correction_bias,  "weight_type": weight_type, "e_score_correction_bias_type": e_score_correction_bias_type}
-            elif key + ".ffn_gate_inp.weight" in self.gguf_loader.tensor_info:
-                targets = [".ffn_gate_inp.weight", ".exp_probs_b.bias"]
+            elif self.gguf_loader.has_tensor(key+".weight"):
+                # targets = [".ffn_gate_inp.weight", ".exp_probs_b.bias"]
+                targets = [".weight", ".e_score_correction_bias"]
                 tensors = self.load_multi(key, targets, device=device)
-                weight = tensors[".ffn_gate_inp.weight"]
-                e_score_correction_bias = tensors[".exp_probs_b.bias"]
-                weight_type = self.gguf_loader.tensor_info[key + ".ffn_gate_inp.weight"]["ggml_type"]
-                e_score_correction_bias_type = self.gguf_loader.tensor_info[key + ".exp_probs_b.bias"]["ggml_type"]
+                weight = tensors[".weight"]
+                e_score_correction_bias = tensors[".e_score_correction_bias"]
+                # weight_type = self.gguf_loader.tensor_info[key + ".weight"]["ggml_type"]
+                weight_type = self.gguf_loader.get_ggml_type(key + ".weight")
+                e_score_correction_bias_type = self.gguf_loader.get_ggml_type(key + ".e_score_correction_bias")
             else:
                 raise ValueError(f"Experts {key} not found in gguf_loader")
             res = {"weight": weight, "e_score_correction_bias": e_score_correction_bias,  "weight_type": weight_type, "e_score_correction_bias_type": e_score_correction_bias_type}

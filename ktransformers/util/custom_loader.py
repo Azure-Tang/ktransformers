@@ -10,7 +10,10 @@ import torch
 import KTransformersOps
 from safetensors import safe_open
 from ktransformers.ktransformers_ext.triton.fp8gemm import fp8_gemm, act_quant, weight_dequant
+from ktransformers.util.custom_gguf import *
 from safetensors.torch import save_file
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Optional, Union
 
 class SafeTensorLoader:
     tensor_file_map = {}
@@ -84,3 +87,16 @@ class SafeTensorLoader:
                 weight_scale_inv = f.get_tensor(key[:-7] + ".weight_scale_inv").to(device)
                 tensor = weight_dequant(tensor, weight_scale_inv)
         return tensor.to(device)
+
+
+
+
+# # Example usage:
+# if __name__ == "__main__":
+#     # This will automatically select the appropriate loader
+#     try:
+#         loader = ModelLoaderFactory.create_loader("/path/to/model")
+#         tensor = loader.load_tensor("some_tensor_name", device="cuda")
+#         print(f"Loaded tensor shape: {tensor.shape}")
+#     except FileNotFoundError as e:
+#         print(e)

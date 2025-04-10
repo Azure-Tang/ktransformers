@@ -174,6 +174,19 @@ class GGUFLoader:
     safetensor_loader: SafeTensorLoader
     def __init__(self, gguf_path: str):
         # Check dir exist
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
+        print("1111111111111\n")
         if not os.path.exists(gguf_path):
             raise FileNotFoundError(f"GGUF dir not found: {gguf_path}")
         if os.path.isfile(gguf_path):
@@ -291,6 +304,7 @@ class GGUFLoader:
         self.gguf_file_meta.update(info)
     
     def get_mmap_tensor(self, name):
+        name = translate_name_to_gguf(name)
         t = self.tensor_info[name]
         mmap_data = self.file_data_map[ self.tensor_file_map[name] ]
 
@@ -301,6 +315,7 @@ class GGUFLoader:
         return mmap_data[offset : offset + itemsize * item_count]
     
     def get_undequanted_tensor_and_ggml_type(self, name):
+        name = translate_name_to_gguf(name)
         t = self.tensor_info[name]
         data = self.get_mmap_tensor(name)
         ggml_type = t["ggml_type"]
@@ -308,6 +323,7 @@ class GGUFLoader:
         return data, ggml_type
 
     def load_expert_tensor(self, name, data, expert_id, elements_per_expert, device = "cuda", target_dtype = torch.get_default_dtype())->torch.Tensor:
+        name = translate_name_to_gguf(name)
         t = self.tensor_info[name]
         if device.lower() == "cpu":
             print(f"loading expert {expert_id} of {name} with CPU")
@@ -338,6 +354,7 @@ class GGUFLoader:
         return values
 
     def load_gguf_tensor(self, name: str, device:str = "cpu", target_dtype = None)->torch.Tensor:
+        name = translate_name_to_gguf(name)
         t = self.tensor_info[name]
         if device.lower() == "cpu":
             print(f"loading {name} with CPU")
@@ -398,7 +415,19 @@ class GGUFLoader:
             .swapaxes(1, 2)
             .reshape(values.shape))
         return values
+    
+    def has_tensor(self, name: str):
+        name = translate_name_to_gguf(name)
+        print(f"has_tensor: {name}")
+        return name in self.tensor_info
 
+    def get_ggml_type(self, name: str):
+        name = translate_name_to_gguf(name)
+        if name not in self.tensor_info:
+            raise KeyError(f"Key {name} not found in GGUF files")
+        return self.tensor_info[name]["ggml_type"]
+    
+    
 def read_value(f, data_type):
     if data_type == DATA_TYPES["string"]:
         length = struct.unpack("<Q", f.read(8))[0]
@@ -918,6 +947,7 @@ def translate_name_to_gguf(name):
     name = name.replace(".gate_up_proj.", ".up_proj")
     
     name = name.replace(".mlp.shared_experts.down_proj", ".ffn_down_shexp")
+    name = name.replace(".mlp.gate.e_score_correction_bias", ".exp_probs_b.bias")
     name = name.replace(".mlp.gate", ".ffn_gate_inp")
     name = name.replace(".mlp.shared_experts.gate_proj", ".ffn_gate_shexp")
     name = name.replace(".mlp.shared_experts.up_proj", ".ffn_up_shexp")

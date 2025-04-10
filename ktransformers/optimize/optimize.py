@@ -54,7 +54,7 @@ def del_meta(module:nn.Module):
 
 def gen_optimize_config(module: nn.Module, out_data: Mapping, rule_list: List, prefix: str="", default_device: str = "cuda:0"):
     module_name = prefix[:-1]
-    translated_name = translate_name_to_gguf(prefix)[:-1]
+    # translated_name = translate_name_to_gguf(prefix)[:-1]
     #print("gen_optimize_config", prefix, module_name, translated_name)
     recursive = True
     for rule in rule_list:
@@ -76,7 +76,7 @@ def gen_optimize_config(module: nn.Module, out_data: Mapping, rule_list: List, p
         if "replace" in rule:
             replace_meta = rule["replace"]
             if module_name not in out_data:
-                out_data[module_name]={"key": translated_name,
+                out_data[module_name]={"key": module_name,
                                     "class": replace_meta["class"] if "class" in replace_meta else "default",
                                     # "device": replace_meta["device"] if "device" in replace_meta else default_device,
                                     "kwargs": copy.deepcopy(replace_meta["kwargs"]) if "kwargs" in replace_meta else dict()}
@@ -91,7 +91,7 @@ def gen_optimize_config(module: nn.Module, out_data: Mapping, rule_list: List, p
     if module_name not in out_data:
         out_data[module_name]= {
             "class": "default",
-            "key": translated_name,
+            "key": module_name,
             "kwargs": {"generate_device": default_device,
                        "prefill_device": default_device}
         }

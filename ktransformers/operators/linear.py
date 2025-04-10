@@ -91,7 +91,8 @@ class KLinearBase(ABC):
                     return nn.Parameter(tensor), nn.Parameter(weight_scale_inv)
                 return nn.Parameter(tensor)
                 
-            elif key + ".weight" in self.gguf_loader.tensor_file_map:
+            # elif key + ".weight" in self.gguf_loader.tensor_file_map:
+            elif self.gguf_loader.has_tensor(key + ".weight"):
                 if key + ".bias" in self.gguf_loader.tensor_file_map:
                     tensors = self.load_multi(key, ["weight", "bias"], device=device)
                     tensor = tensors["weight"]

@@ -94,7 +94,8 @@ def load_cur_state_dict(module: nn.Module, gguf_loader: GGUFLoader, prefix: str 
     local_state = {k: v for k, v in local_name_params if v is not None}
     for name, param in local_state.items():
         key = prefix + name
-        translated_key = translate_name_to_gguf(key)
+        # translated_key = translate_name_to_gguf(key)
+        translated_key = key
         
         # TODO: Merge all loader.
         # I know this is ugly but lets do it for now.
@@ -105,7 +106,7 @@ def load_cur_state_dict(module: nn.Module, gguf_loader: GGUFLoader, prefix: str 
             load_dequantized_tensor = gguf_loader.load_gguf_tensor
             tensor_file_map = gguf_loader.tensor_file_map
         
-        if translated_key in tensor_file_map:
+        if gguf_loader.has_tensor(translated_key):
             target_dtype = torch.get_default_dtype()
             device = get_device(translated_key[:translated_key.rfind(".")], gguf_loader.tensor_device_map)
             print(f"loading {translated_key} to {device}")

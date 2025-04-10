@@ -296,14 +296,17 @@ class KExpertsCPU(KExpertsBase):
                 up_type = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_up_exps.ggml_type").item()
                 down_type = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_down_exps.ggml_type").item()
             
-            elif key + ".ffn_gate_exps.weight" in self.gguf_loader.tensor_info:
+            elif self.gguf_loader.has_tensor(key + ".ffn_gate_exps.weight"):
                 gate = self.gguf_loader.get_mmap_tensor(key + ".ffn_gate_exps.weight")
                 up = self.gguf_loader.get_mmap_tensor(key + ".ffn_up_exps.weight")
                 down = self.gguf_loader.get_mmap_tensor(key + ".ffn_down_exps.weight")
-                gate_type = self.gguf_loader.tensor_info[key + ".ffn_gate_exps.weight"]["ggml_type"]
-                up_type = self.gguf_loader.tensor_info[key + ".ffn_up_exps.weight"]["ggml_type"]
-                down_type = self.gguf_loader.tensor_info[key + ".ffn_down_exps.weight"]["ggml_type"]
-            elif key + ".ffn_down.0.weight" in self.gguf_loader.tensor_info:
+                # gate_type = self.gguf_loader.tensor_info[key + ".ffn_gate_exps.weight"]["ggml_type"]
+                # up_type = self.gguf_loader.tensor_info[key + ".ffn_up_exps.weight"]["ggml_type"]
+                # down_type = self.gguf_loader.tensor_info[key + ".ffn_down_exps.weight"]["ggml_type"]
+                gate_type = self.gguf_loader.get_ggml_type(key + ".ffn_gate_exps.weight")
+                up_type = self.gguf_loader.get_ggml_type(key + ".ffn_up_exps.weight")
+                down_type = self.gguf_loader.get_ggml_type(key + ".ffn_down_exps.weight")
+            elif self.gguf_loader.has_tensor(key + ".ffn_down.0.weight"):
                 # for supporting  Mixtral-8x7B-Instuct  
                 gate = []
                 up = []
@@ -318,9 +321,12 @@ class KExpertsCPU(KExpertsBase):
                 gate = np.stack(gate)
                 up = np.stack(up)
                 down = np.stack(down)
-                gate_type = self.gguf_loader.tensor_info[key + ".ffn_gate.0.weight"]["ggml_type"]
-                up_type = self.gguf_loader.tensor_info[key + ".ffn_up.0.weight"]["ggml_type"]
-                down_type = self.gguf_loader.tensor_info[key + ".ffn_down.0.weight"]["ggml_type"]
+                # gate_type = self.gguf_loader.tensor_info[key + ".ffn_gate.0.weight"]["ggml_type"]
+                # up_type = self.gguf_loader.tensor_info[key + ".ffn_up.0.weight"]["ggml_type"]
+                # down_type = self.gguf_loader.tensor_info[key + ".ffn_down.0.weight"]["ggml_type"]
+                gate_type = self.gguf_loader.get_ggml_type(key + ".ffn_gate.0.weight")
+                up_type = self.gguf_loader.get_ggml_type(key + ".ffn_up.0.weight")
+                down_type = self.gguf_loader.get_ggml_type(key + ".ffn_down.0.weight")
             else:
                 raise ValueError(f"Experts {key} not found in gguf_loader")
             res = {key:{"gate": gate, "up": up, "down": down, "gate_type": gate_type, "up_type": up_type, "down_type": down_type}}
