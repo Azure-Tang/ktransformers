@@ -11,8 +11,8 @@ from torch import nn
 import itertools
 import time
 import enum
-from ktransformers.util.custom_gguf import translate_name_to_gguf
-from ktransformers.util.custom_gguf import GGUFLoader
+from ktransformers.util.custom_loader import translate_name_to_gguf
+from ktransformers.util.custom_loader import ModelLoaderFactory, ModelLoader, SafeTensorLoader, GGUFLoader
 from ktransformers.operators import base_operator
 from ktransformers.models.custom_cache import StaticCache
 from ktransformers.util.cuda_graph_runner import CUDAGraphRunner
@@ -87,7 +87,7 @@ def get_all_used_cuda_device(device_map:dict):
     all_device_list = list(all_device_list)
     return all_device_list
 
-def load_cur_state_dict(module: nn.Module, gguf_loader: GGUFLoader, prefix: str = ""):
+def load_cur_state_dict(module: nn.Module, gguf_loader: ModelLoader, prefix: str = ""):
     prefix = prefix.replace("orig_module.", "")
     persistent_buffers = {k: v for k, v in module._buffers.items() if k not in module._non_persistent_buffers_set}
     local_name_params = itertools.chain(module._parameters.items(), persistent_buffers.items())
@@ -99,12 +99,11 @@ def load_cur_state_dict(module: nn.Module, gguf_loader: GGUFLoader, prefix: str 
         
         # TODO: Merge all loader.
         # I know this is ugly but lets do it for now.
-        if gguf_loader.safetensor_loader is not None:
-            load_dequantized_tensor = gguf_loader.safetensor_loader.load_dequantized_tensor
-            tensor_file_map = gguf_loader.safetensor_loader.tensor_file_map
+        # if gguf_loader.safetensor_loader is not None:
+        if isinstance(gguf_loader, SafeTensorLoader):
+            load_dequantized_tensor = gguf_loader.load_dequantized_tensor
         else:
             load_dequantized_tensor = gguf_loader.load_gguf_tensor
-            tensor_file_map = gguf_loader.tensor_file_map
         
         if gguf_loader.has_tensor(translated_key):
             target_dtype = torch.get_default_dtype()
@@ -118,7 +117,7 @@ def load_cur_state_dict(module: nn.Module, gguf_loader: GGUFLoader, prefix: str 
             #print(load_config.tensor_file_map.keys())
             raise Exception(f"can't find {translated_key} in GGUF file!")
         
-def load_weights(module:nn.Module, gguf_loader:GGUFLoader, prefix=''):
+def load_weights(module:nn.Module, gguf_loader:ModelLoader, prefix=''):
     #print(f"recursively loading weights {prefix}")
     if not isinstance(module, base_operator.BaseInjectedModule):
         load_cur_state_dict(module, gguf_loader, prefix)

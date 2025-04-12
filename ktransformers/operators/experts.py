@@ -26,7 +26,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "ktransformers_ext
 import cpuinfer_ext
 from cpuinfer_ext.moe import MOEConfig, MOE
 import ctypes
-from ktransformers.util.custom_gguf import GGUFLoader
+from ktransformers.util.custom_loader import GGUFLoader, SafeTensorLoader, ModelLoader
 from ktransformers.util.utils import InferenceState
 from ktransformers.server.config.config import Config
 from transformers.activations import ACT2FN
@@ -77,7 +77,7 @@ class KExpertsBase(ABC):
         down_type = None
 
         for key in keys:
-            if key + ".ffn_gate_exps.weight" in self.gguf_loader.tensor_info:
+            if self.gguf_loader.has_tensor(key + ".ffn_gate_exps.weight"):
                 targets = [".ffn_gate_exps.weight", ".ffn_up_exps.weight", ".ffn_down_exps.weight" ]
                 tensors = self.load_multi(key, targets, device=device)
                 gate = tensors[".ffn_gate_exps.weight"]
@@ -86,7 +86,7 @@ class KExpertsBase(ABC):
                 gate_type = self.gguf_loader.tensor_info[key + ".ffn_gate_exps.weight"]["ggml_type"]
                 up_type = self.gguf_loader.tensor_info[key + ".ffn_up_exps.weight"]["ggml_type"]
                 down_type = self.gguf_loader.tensor_info[key + ".ffn_down_exps.weight"]["ggml_type"]
-            elif key + ".ffn_down.0.weight" in self.gguf_loader.tensor_info:
+            elif self.gguf_loader.has_tensor(key + ".ffn_down.0.weight"):
                 # for supporting  Mixtral-8x7B-Instuct  
                 gate = []
                 up = []
@@ -287,14 +287,9 @@ class KExpertsCPU(KExpertsBase):
         down_type = None
 
         for key in keys:
-            if self.gguf_loader.safetensor_loader is not None:
-                # using a temp ugly way to temprary load the tensor
-                gate = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_gate_exps.weight").numpy()
-                up = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_up_exps.weight").numpy()
-                down = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_down_exps.weight").numpy()
-                gate_type = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_gate_exps.ggml_type").item()
-                up_type = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_up_exps.ggml_type").item()
-                down_type = self.gguf_loader.safetensor_loader.load_tensor(key + ".ffn_down_exps.ggml_type").item()
+            if isinstance(self.gguf_loader, SafeTensorLoader):
+                res = self.gguf_loader.load_experts(key)
+                return {key: res}
             
             elif self.gguf_loader.has_tensor(key + ".ffn_gate_exps.weight"):
                 gate = self.gguf_loader.get_mmap_tensor(key + ".ffn_gate_exps.weight")
@@ -530,7 +525,7 @@ class KExpertsTorch(KExpertsBase):
         down = None
 
         for key in keys:
-            if key + ".ffn_gate_exps.weight" in self.gguf_loader.tensor_info:
+            if self.gguf_loader.has_tensor(key + ".ffn_gate_exps.weight"):
                 gate = self.gguf_loader.get_mmap_tensor(key + ".ffn_gate_exps.weight")
                 up = self.gguf_loader.get_mmap_tensor(key + ".ffn_up_exps.weight")
                 down = self.gguf_loader.get_mmap_tensor(key + ".ffn_down_exps.weight")
